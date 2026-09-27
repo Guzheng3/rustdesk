@@ -134,6 +134,19 @@ pub fn start(args: &mut [String]) {
             let hw = frame.get_host().get_hwnd();
             crate::platform::windows::enable_lowlevel_keyboard(hw as _);
         }
+        let mut ab_password = String::new();
+        let mut args: Vec<String> = args.to_vec();
+        if let Some(pos) = args.iter().position(|a| a == "--ab-password") {
+            if pos + 1 < args.len() {
+                ab_password = args.remove(pos + 1);
+                args.remove(pos);
+            }
+        }
+        let shared_password = if ab_password.is_empty() {
+            None
+        } else {
+            Some(ab_password)
+        };
         let mut iter = args.iter();
         let Some(cmd) = iter.next() else {
             log::error!("Failed to get cmd arg");
@@ -149,8 +162,13 @@ pub fn start(args: &mut [String]) {
         let args: Vec<String> = iter.map(|x| x.clone()).collect();
         frame.set_title(&id);
         frame.register_behavior("native-remote", move || {
-            let handler =
-                remote::SciterSession::new(cmd.clone(), id.clone(), pass.clone(), args.clone());
+            let handler = remote::SciterSession::new(
+                cmd.clone(),
+                id.clone(),
+                pass.clone(),
+                shared_password.clone(),
+                args.clone(),
+            );
             #[cfg(not(feature = "flutter"))]
             {
                 *CUR_SESSION.lock().unwrap() = Some(handler.inner());
@@ -490,8 +508,8 @@ impl UI {
         crate::lan::send_wol(id)
     }
 
-    fn new_remote(&mut self, id: String, remote_type: String, force_relay: bool) {
-        new_remote(id, remote_type, force_relay)
+    fn new_remote(&mut self, id: String, remote_type: String, force_relay: bool, password: String) {
+        new_remote(id, remote_type, force_relay, password)
     }
 
     fn is_process_trusted(&mut self, _prompt: bool) -> bool {
@@ -742,7 +760,7 @@ impl sciter::EventHandler for UI {
         fn set_remote_id(String);
         fn closing(i32, i32, i32, i32);
         fn get_size();
-        fn new_remote(String, String, bool);
+        fn new_remote(String, String, bool, String);
         fn send_wol(String);
         fn remove_peer(String);
         fn remove_discovered(String);

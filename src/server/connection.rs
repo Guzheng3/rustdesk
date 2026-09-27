@@ -2637,6 +2637,9 @@ impl Connection {
                 return false;
             }
         }
+        if enable_prefix_option == keys::OPTION_ALLOW_REMOTE_CONFIG_MODIFICATION {
+            return Config::get_option(enable_prefix_option) != "N";
+        }
         config::option2bool(
             enable_prefix_option,
             &Config::get_option(enable_prefix_option),
@@ -2991,8 +2994,15 @@ impl Connection {
                 crate::get_builtin_option(keys::OPTION_ALLOW_LOGON_SCREEN_PASSWORD) == "Y"
                     && is_logon();
 
-            if (password::approve_mode() == ApproveMode::Click && !allow_logon_screen_password)
-                || password::approve_mode() == ApproveMode::Both && !password::has_valid_password()
+            // Unset "approve-mode" falls back to password-only so a fresh install
+            // accepts sessions automatically once the password matches.
+            let approve_mode = if Config::get_option("approve-mode").is_empty() {
+                ApproveMode::Password
+            } else {
+                password::approve_mode()
+            };
+            if (approve_mode == ApproveMode::Click && !allow_logon_screen_password)
+                || approve_mode == ApproveMode::Both && !password::has_valid_password()
             {
                 #[cfg(not(any(target_os = "android", target_os = "ios")))]
                 if should_use_terminal_os_login_scope(self.terminal, &lr.os_login.username) {

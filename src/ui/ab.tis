@@ -338,6 +338,7 @@ class SessionList: Reactor.Component {
                     {(!this.type || this.type == "fav") && <li #add-fav>{translate('Add to Favorites')}</li>}
                     {(!this.type || this.type == "fav") && <li #remove-fav>{translate('Remove from Favorites')}</li>}
                     {this.type == "ab" && <li #edit-tag>{translate('Edit Tag')}</li>}
+                    {this.type == "ab" && <li #set-ab-password>{translate('Set Password')}</li>}
                 </menu>
             </popup>
             {sessions}
@@ -517,6 +518,25 @@ class SessionList: Reactor.Component {
                     peer.tags = selectTags.tags;
                     updateAb();
                 }, 260, 500, 0, "size: *; margin: 2em 0;");
+        } else if (action == "set-ab-password") {
+            var peer;
+            for (var v in ab.peers) {
+                if (v.id == id) {
+                    peer = v;
+                }
+            }
+            if (!peer) return;
+            var pass0 = peer.password || "";
+            msgbox("custom-ab-password", translate('Set Password'), <div .form .set-password>
+                    <div><span>{translate('Password')}:</span><PasswordComponent value={pass0} /></div>
+                </div>, "", function(res=null) {
+                    if (!res) return;
+                    var pass = (res.password || '').trim();
+                    if (pass != pass0) {
+                        peer.password = pass;
+                        updateAb();
+                    }
+                }, 240);
         }
     }
 }

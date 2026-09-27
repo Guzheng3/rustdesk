@@ -1239,12 +1239,16 @@ pub fn recent_sessions_updated() -> bool {
 }
 
 #[cfg(not(any(target_os = "android", target_os = "ios", feature = "flutter")))]
-pub fn new_remote(id: String, remote_type: String, force_relay: bool) {
+pub fn new_remote(id: String, remote_type: String, force_relay: bool, password: String) {
     let mut lock = CHILDREN.lock().unwrap();
     let mut args = vec![format!("--{}", remote_type), id.clone()];
     if force_relay {
         args.push("".to_string()); // password
         args.push("--relay".to_string());
+    }
+    if !password.is_empty() {
+        args.push("--ab-password".to_string());
+        args.push(password);
     }
     let key = (id.clone(), remote_type.clone());
     if let Some(c) = lock.1.get_mut(&key) {

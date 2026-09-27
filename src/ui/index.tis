@@ -113,7 +113,14 @@ function createNewConnect(id, type) {
         return;
     }
     handler.set_remote_id(id);
-    handler.new_remote(id, type, force_relay);
+    var ab_password = "";
+    for (var i = 0; i < ab.peers.length; ++i) {
+        if (ab.peers[i].id == old_id) {
+            ab_password = ab.peers[i].password || "";
+            break;
+        }
+    }
+    handler.new_remote(id, type, force_relay, ab_password);
 }
 
 class ShareRdp: Reactor.Component {
@@ -586,7 +593,7 @@ class MyIdMenu: Reactor.Component {
                 el.attributes.toggleClass("selected", enabled);
                 el.attributes.toggleClass("line-through", !enabled);
             } else if (id.indexOf("allow-") == 0) {
-                var enabled = handler.get_option(id) == "Y";
+                var enabled = id == "allow-remote-config-modification" ? handler.get_option(id) != "N" : handler.get_option(id) == "Y";
                 el.attributes.toggleClass("selected", enabled);
                 el.attributes.toggleClass("line-through", !enabled);
             } else if (id == "whitelist") {
@@ -623,7 +630,9 @@ class MyIdMenu: Reactor.Component {
         if (me.id && me.id.indexOf("enable-") == 0) {
             handler.set_option(me.id, handler.get_option(me.id) == "N" ? default_option_yes : "N");
         }
-        if (me.id && me.id.indexOf("allow-") == 0) {
+        if (me.id == "allow-remote-config-modification") {
+            handler.set_option(me.id, handler.get_option(me.id) == "N" ? default_option_yes : "N");
+        } else if (me.id && me.id.indexOf("allow-") == 0) {
             handler.set_option(me.id, handler.get_option(me.id) == "Y" ? default_option_no : "Y");
         }
         if (me.id == "whitelist") {
@@ -1112,8 +1121,10 @@ class PasswordArea: Reactor.Component {
             mode_id = 'approve-mode-password';
         else if (mode == 'click')
             mode_id = 'approve-mode-click';
-        else
+        else if (mode == 'both' || mode == 'password-click')
             mode_id = 'approve-mode-both';
+        else
+            mode_id = 'approve-mode-password';
         var pwd_id = handler.get_option('verification-method');
         if (pwd_id != 'use-temporary-password' && pwd_id != 'use-permanent-password')
             pwd_id = 'use-both-passwords';
@@ -1503,7 +1514,7 @@ function check_if_overlay() {
     } else if (is_enabled_by_control_permissions == "false") {
         enabled = false;
     } else {
-        enabled = handler.get_option('allow-remote-config-modification') == 'Y';
+        enabled = handler.get_option('allow-remote-config-modification') != 'N';
     }
     if (!enabled) {
         var time0 = getTime();
