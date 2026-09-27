@@ -101,15 +101,43 @@ jobs:
 
     - uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
 
-    - name: Build (release)
+    - name: Build (release, sciter UI)
       shell: bash
       run: |
-        cargo build --locked --release --target=${{ matrix.job.target }}
+        python3 res/inline-sciter.py
+        cargo build --locked --release --features inline --target=${{ matrix.job.target }}
+
+    - name: Stage executable with sciter runtime
+      shell: bash
+      run: |
+        mkdir -p ./artifact
+        cp target/${{ matrix.job.target }}/release/${{ matrix.job.bin }} ./artifact/
+        case ${{ matrix.job.target }} in
+          x86_64-pc-windows-msvc)
+            curl -LJ --retry 3 -o ./artifact/sciter.dll https://github.com/c-smile/sciter-sdk/raw/master/bin.win/x64/sciter.dll
+            ;;
+          x86_64-unknown-linux-gnu)
+            curl -LJ --retry 3 -o ./artifact/libsciter-gtk.so https://github.com/c-smile/sciter-sdk/raw/master/bin.lnx/x64/libsciter-gtk.so
+            cat > ./artifact/HOW-TO-RUN.txt <<'EOF'
+        This binary uses the sciter UI engine, loaded at runtime.
+
+        Option 1 (recommended):
+          sudo mkdir -p /usr/share/rustdesk
+          sudo cp libsciter-gtk.so /usr/share/rustdesk/
+          ./rustdesk
+
+        Option 2:
+          LD_LIBRARY_PATH=. ./rustdesk
+
+        Keep libsciter-gtk.so next to the rustdesk binary for option 2.
+        EOF
+            ;;
+        esac
 
     - name: Upload executable
       uses: actions/upload-artifact@v4
       with:
         name: rustdesk-${{ matrix.job.target }}
-        path: target/${{ matrix.job.target }}/release/${{ matrix.job.bin }}
+        path: ./artifact/
         if-no-files-found: error
         retention-days: 7
