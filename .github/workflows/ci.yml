@@ -151,8 +151,14 @@ jobs:
         vcpkgGitCommitId: ${{ env.VCPKG_COMMIT_ID }}
 
     - name: Install vcpkg dependencies
+      if: runner.os != 'Windows'
       run: |
         $VCPKG_ROOT/vcpkg install --x-install-root="$VCPKG_ROOT/installed"
+      shell: bash
+
+    - name: Install vcpkg dependencies (Windows)
+      run: |
+        $VCPKG_ROOT/vcpkg install --triplet x64-windows-static --x-install-root="$VCPKG_ROOT/installed"
       shell: bash
 
     - name: Install Rust toolchain
