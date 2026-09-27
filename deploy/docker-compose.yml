@@ -1,0 +1,47 @@
+services:
+  hbbs:
+    image: rustdesk/rustdesk-server:latest
+    container_name: hbbs
+    command: hbbs -k _
+    ports:
+      - "21115:21115"
+      - "21116:21116"
+      - "21116:21116/udp"
+      - "21118:21118"
+    volumes:
+      - ./data/hbbs:/root
+    networks: [rustdesk-net]
+    restart: unless-stopped
+    depends_on: [api]
+
+  hbbr:
+    image: rustdesk/rustdesk-server:latest
+    container_name: hbbr
+    command: hbbr -k _
+    ports:
+      - "21117:21117"
+      - "21119:21119"
+    volumes:
+      - ./data/hbbr:/root
+    networks: [rustdesk-net]
+    restart: unless-stopped
+
+  api:
+    build: ../server-api
+    container_name: rustdesk-api
+    environment:
+      RD_API_USER: "${RD_API_USER:?set RD_API_USER in .env}"
+      RD_API_PASSWORD: "${RD_API_PASSWORD:?set RD_API_PASSWORD in .env}"
+      RD_API_DB: /data/api.db
+    ports:
+      - "21114:21114"
+    volumes:
+      - ./data/api:/data
+    networks: [rustdesk-net]
+    restart: unless-stopped
+
+networks:
+  rustdesk-net: {}
+
+# Client settings: ID server = <host>:21116, relay = <host>:21117
+# The client derives the API automatically as http://<host>:21114.

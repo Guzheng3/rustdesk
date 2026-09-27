@@ -98,6 +98,10 @@ class ConnectStatus: Reactor.Component {
 }
 
 function createNewConnect(id, type) {
+    if (!handler.get_local_option("access_token")) {
+        updateLoginGate();
+        return;
+    }
     id = id.replace(/\s/g, "");
     app.remote_id.value = formatId(id);
     if (!id) return;
@@ -752,6 +756,12 @@ class App: Reactor.Component
                     </div>
                     {!outgoing_only ? <ConnectStatus @{this.connect_status} /> : ""}
                 </div>}
+                <div #login-gate style="position:absolute; left:0; top:0; right:0; bottom:0; background:color(bg); display:none; z-index:1000;">
+                    <div style="margin:*; text-align:center;">
+                        <div style="font-size:1.3em; margin-bottom:1.2em; color:color(text);">{translate('Login required')}</div>
+                        <button .button #gate-login>{translate('Login')}</button>
+                    </div>
+                </div>
                 <div #overlay style="position: absolute;size:*;background:black;opacity:0.5;display:none" />
             </div>; 
     }
@@ -762,6 +772,10 @@ class App: Reactor.Component
 
     event click $(button#file-transfer) {
         this.newRemote("file-transfer");
+    }
+
+    event click $(button#gate-login) {
+        login();
     }
 
     function newRemote(type) {
@@ -1393,6 +1407,7 @@ function self.ready() {
         view.focus = $(#remote_id);
     }
     refreshCurrentUser();
+    updateLoginGate();
     updateTheme();
 }
 
@@ -1555,6 +1570,7 @@ function login() {
             set_local_user_info(data.user);
             show_progress(-1);
             myIdMenu.update();
+            updateLoginGate();
             getAb();
         }, function(err, status) {
             abLoading = false;
@@ -1607,6 +1623,7 @@ function on_2fa_check(last_msg) {
                     set_local_user_info(data.user);
                     show_progress(-1);
                     myIdMenu.update();
+                    updateLoginGate();
                     getAb();
                 },
                 function(err, status) {
@@ -1623,11 +1640,19 @@ function on_2fa_check(last_msg) {
     );
 }
 
+function updateLoginGate() {
+    var gate = $(#login-gate);
+    if (!gate) return;
+    var loggedIn = !!handler.get_local_option("access_token");
+    gate.style#display = loggedIn ? "none" : "block";
+}
+
 function reset_token() {
     handler.set_local_option("access_token", "");
     handler.set_local_option("user_info", "");
     handler.set_local_option("selected-tags", "");
     myIdMenu.update();
+    updateLoginGate();
     resetAb();
     if (abComponent) {
         abComponent.update();

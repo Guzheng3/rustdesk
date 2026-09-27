@@ -212,6 +212,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
         ("Always connect via relay", "强制走中继连接"),
         ("whitelist_tip", "只有白名单里的 IP 才能访问本机"),
         ("Login", "登录"),
+        ("Login required", "使用前请先登录"),
         ("Verify", "验证"),
         ("Remember me", "记住我"),
         ("Trust this device", "信任此设备"),
