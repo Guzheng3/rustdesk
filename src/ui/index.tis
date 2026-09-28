@@ -98,8 +98,10 @@ class ConnectStatus: Reactor.Component {
 }
 
 function createNewConnect(id, type) {
+    // Only outgoing connections require login; the controlled side works
+    // without any account.
     if (!handler.get_local_option("access_token")) {
-        updateLoginGate();
+        login();
         return;
     }
     id = id.replace(/\s/g, "");
@@ -1652,10 +1654,11 @@ function on_2fa_check(last_msg) {
 }
 
 function updateLoginGate() {
+    // Login is enforced per connect attempt (see createNewConnect), never by
+    // blocking the main window: a machine used purely as controlled side must
+    // work fully without an account.
     var gate = $(#login-gate);
-    if (!gate) return;
-    var loggedIn = !!handler.get_local_option("access_token");
-    gate.style#display = loggedIn ? "none" : "block";
+    if (gate) gate.style#display = "none";
 }
 
 function reset_token() {
