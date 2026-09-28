@@ -33,10 +33,15 @@ services:
       RD_API_USER: "${RD_API_USER:?set RD_API_USER in .env}"
       RD_API_PASSWORD: "${RD_API_PASSWORD:?set RD_API_PASSWORD in .env}"
       RD_API_DB: /data/api.db
+      # Optional enterprise TLS on 21114: put fullchain.pem + privkey.pem in
+      # deploy/data/api/certs/ and the API serves HTTPS directly.
+      RD_API_TLS_CERT: "${RD_API_TLS_CERT:-}"
+      RD_API_TLS_KEY: "${RD_API_TLS_KEY:-}"
     ports:
       - "21114:21114"
     volumes:
       - ./data/api:/data
+      - ./data/api/certs:/certs:ro
     networks: [rustdesk-net]
     restart: unless-stopped
 
@@ -45,3 +50,6 @@ networks:
 
 # Client settings: ID server = <host>:21116, relay = <host>:21117
 # The client derives the API automatically as http://<host>:21114.
+# For TLS: set the client's API server to https://<host>:21114 and mount
+# certs as above (RD_API_TLS_CERT=/certs/fullchain.pem, RD_API_TLS_KEY=/certs/privkey.pem).
+# Secrets in /data: api.db (AES-256-GCM at rest), enc.key (auto-generated), audit.log.

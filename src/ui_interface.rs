@@ -1246,9 +1246,9 @@ pub fn new_remote(id: String, remote_type: String, force_relay: bool, password: 
         args.push("".to_string()); // password
         args.push("--relay".to_string());
     }
+    let mut envs: Vec<(String, String)> = Vec::new();
     if !password.is_empty() {
-        args.push("--ab-password".to_string());
-        args.push(password);
+        envs.push(("RD_AB_PASSWORD".to_string(), password));
     }
     let key = (id.clone(), remote_type.clone());
     if let Some(c) = lock.1.get_mut(&key) {
@@ -1265,7 +1265,7 @@ pub fn new_remote(id: String, remote_type: String, force_relay: bool, password: 
             }
         }
     }
-    match crate::run_me(args) {
+    match crate::run_me_with_env(args, envs) {
         Ok(child) => {
             lock.1.insert(key, child);
         }

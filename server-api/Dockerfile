@@ -9,4 +9,4 @@ ENV RD_API_DB=/data/api.db
 VOLUME /data
 EXPOSE 21114
 
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "21114"]
+CMD ["python", "main.py"]

@@ -859,6 +859,13 @@ pub fn refresh_rendezvous_server() {
 }
 
 pub fn run_me<T: AsRef<std::ffi::OsStr>>(args: Vec<T>) -> std::io::Result<std::process::Child> {
+    run_me_with_env(args, Vec::<(String, String)>::new())
+}
+
+pub fn run_me_with_env<T: AsRef<std::ffi::OsStr>>(
+    args: Vec<T>,
+    envs: Vec<(String, String)>,
+) -> std::io::Result<std::process::Child> {
     #[cfg(target_os = "linux")]
     if let Ok(appdir) = std::env::var("APPDIR") {
         let appimage_cmd = std::path::Path::new(&appdir).join("AppRun");
@@ -881,6 +888,9 @@ pub fn run_me<T: AsRef<std::ffi::OsStr>>(args: Vec<T>) -> std::io::Result<std::p
             cmd.env(crate::platform::SET_FOREGROUND_WINDOW, "1");
             force_foreground = true;
         }
+    }
+    for (k, v) in &envs {
+        cmd.env(k, v);
     }
     let result = cmd.args(&args).spawn();
     match result.as_ref() {
@@ -1133,7 +1143,7 @@ pub fn get_api_server(api: String, custom: String) -> String {
     }
     if res.starts_with("https")
         && res.ends_with(":21114")
-        && get_builtin_option(keys::OPTION_ALLOW_HTTPS_21114) != "Y"
+        && get_builtin_option(keys::OPTION_ALLOW_HTTPS_21114) == "N"
     {
         return res.replace(":21114", "");
     }

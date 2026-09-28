@@ -134,19 +134,12 @@ pub fn start(args: &mut [String]) {
             let hw = frame.get_host().get_hwnd();
             crate::platform::windows::enable_lowlevel_keyboard(hw as _);
         }
-        let mut ab_password = String::new();
-        let mut args: Vec<String> = args.to_vec();
-        if let Some(pos) = args.iter().position(|a| a == "--ab-password") {
-            if pos + 1 < args.len() {
-                ab_password = args.remove(pos + 1);
-                args.remove(pos);
-            }
-        }
-        let shared_password = if ab_password.is_empty() {
-            None
-        } else {
-            Some(ab_password)
-        };
+        // The ab password arrives via env var (not argv) so it never shows up
+        // in the process list visible to other local users.
+        let shared_password = std::env::var("RD_AB_PASSWORD")
+            .ok()
+            .filter(|p| !p.is_empty());
+        std::env::remove_var("RD_AB_PASSWORD");
         let mut iter = args.iter();
         let Some(cmd) = iter.next() else {
             log::error!("Failed to get cmd arg");
